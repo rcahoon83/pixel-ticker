@@ -1,166 +1,91 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pixel Ticker Board (1:1)</title>
+  <meta charset="utf-8">
+  <title>Pixel Ticker</title>
 
-  <!-- Pixel font -->
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg:#000;
-      --white:#f5f5f5;
-      --red:#ff2d2d;
-      --green:#39ff5a;
-      --grid:#0c0c0c;
-      --line:#1a1a1a;
-    }
-
     html, body {
-      height: 100%;
       margin: 0;
-      background: var(--bg);
+      width: 100%;
+      height: 100%;
+      background: black;
       overflow: hidden;
       font-family: 'VT323', monospace;
     }
 
-    /* 1:1 board that fills the available iframe area.
-       If the iframe isn't square, this keeps the board square
-       and centered. */
-    .stage{
-      height: 100%;
+    .board {
       width: 100%;
-      display: grid;
-      place-items: center;
-      background: var(--bg);
-    }
-
-    .board{
-      width: min(100vmin, 100vw, 100vh);
-      aspect-ratio: 1 / 1;
-      background: var(--bg);
-      box-sizing: border-box;
-      padding: 22px;
-      border-radius: 14px;
-      position: relative;
-
-      /* subtle LED matrix dot pattern */
-      background-image:
-        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.07) 1px, transparent 1.6px);
-      background-size: 6px 6px;
-    }
-
-    /* inner frame */
-    .frame{
-      position: absolute;
-      inset: 14px;
-      border: 2px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      pointer-events: none;
-    }
-
-    .rows{
-      position: relative;
       height: 100%;
       display: grid;
       grid-template-rows: repeat(6, 1fr);
-      gap: 0;
     }
 
-    .row{
+    .row {
       display: grid;
-      grid-template-columns: 1.05fr 1.25fr 1fr; /* symbol | price | pct */
+      grid-template-columns: 1fr 1.5fr 1fr;
       align-items: center;
-      padding: 6px 10px;
-      border-top: 2px solid rgba(255,255,255,0.10);
+      padding: 0 20px;
+      border-top: 2px solid rgba(255,255,255,0.15);
     }
-    .row:first-child{
+
+    .row:first-child {
       border-top: none;
     }
 
-    .sym{
-      color: var(--white);
-      font-size: 56px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      text-shadow: 0 0 6px rgba(255,255,255,0.12);
+    .sym {
+      color: white;
+      font-size: 48px;
     }
 
-    .price{
-      font-size: 68px;
-      letter-spacing: 1px;
-      text-shadow: 0 0 10px rgba(255,45,45,0.16);
-      justify-self: start;
+    .price {
+      font-size: 60px;
     }
 
-    .pct{
-      font-size: 68px;
-      letter-spacing: 1px;
-      justify-self: end;
-      text-shadow: 0 0 10px rgba(57,255,90,0.16);
+    .pct {
+      font-size: 60px;
+      text-align: right;
     }
 
-    .down { color: var(--red); }
-    .up   { color: var(--green); }
-
-    /* Make it more “LED” chunky */
-    .sym, .price, .pct {
-      -webkit-font-smoothing: none;
-      font-smooth: never;
-      image-rendering: pixelated;
-    }
-
-    /* Responsive scaling if your iframe is smaller */
-    @media (max-width: 420px), (max-height: 420px){
-      .board{ padding: 14px; }
-      .frame{ inset: 10px; }
-      .sym{ font-size: 44px; }
-      .price, .pct{ font-size: 54px; }
-    }
+    .up { color: #39ff5a; }
+    .down { color: #ff2d2d; }
   </style>
 </head>
 
 <body>
-  <div class="stage">
-    <div class="board" id="board">
-      <div class="rows" id="rows"></div>
-      <div class="frame"></div>
+  <div class="board">
+    <div class="row">
+      <div class="sym">$GME</div>
+      <div class="price up">177.98</div>
+      <div class="pct up">+1.32%</div>
+    </div>
+    <div class="row">
+      <div class="sym">$BTC</div>
+      <div class="price down">64836</div>
+      <div class="pct down">-0.46%</div>
+    </div>
+    <div class="row">
+      <div class="sym">$SLV</div>
+      <div class="price up">29.44</div>
+      <div class="pct up">+0.27%</div>
+    </div>
+    <div class="row">
+      <div class="sym">$IAU</div>
+      <div class="price up">62.62</div>
+      <div class="pct up">+0.18%</div>
+    </div>
+    <div class="row">
+      <div class="sym">$SCHD</div>
+      <div class="price down">80.93</div>
+      <div class="pct down">-0.23%</div>
+    </div>
+    <div class="row">
+      <div class="sym">$AMC</div>
+      <div class="price up">4.31</div>
+      <div class="pct up">+2.51%</div>
     </div>
   </div>
-
-  <script>
-    // Your symbols
-    const symbols = ["GME","BTC","SLV","IAU","SCHD","AMC"];
-
-    // Demo data that looks like your screenshot.
-    // We'll swap this later for real prices if you want.
-    const demo = {
-      GME:  { price: 177.98, pct: +1.32 },
-      BTC:  { price: 64836,  pct: -0.46 },
-      SLV:  { price: 29.44,  pct: +0.27 },
-      IAU:  { price: 62.62,  pct: +0.18 },
-      SCHD: { price: 80.93,  pct: -0.23 },
-      AMC:  { price: 4.31,   pct: +2.51 }
-    };
-
-    function fmtPrice(sym, val){
-      // BTC often looks better without decimals in this style
-      if (sym === "BTC") return Math.round(val).toString();
-      // others 2 decimals
-      return Number(val).toFixed(2);
-    }
-
-    function fmtPct(val){
-      const sign = val >= 0 ? "+" : "";
-      return sign + Number(val).toFixed(2) + "%";
-    }
-
-    function render(data){
-      const rows = document.getElementById("rows");
-      rows.innerHTML = "";
-
-      for (const sym of symbols){
-        const q = data[sym];
-        const up = q
+</body>
+</html>
