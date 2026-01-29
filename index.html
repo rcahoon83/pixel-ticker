@@ -1,21 +1,32 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pixel Ticker Board</title>
+
+  <!-- Pixel font -->
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
   <style>
+    :root{
+      --bg:#000;
+      --w:#f2f2f2;
+      --g:#39ff5a;
+      --r:#ff2d2d;
+      --line:rgba(255,255,255,.12);
+    }
+
     html, body {
       margin: 0;
       width: 100%;
       height: 100%;
-      background: #000;
+      background: var(--bg);
       overflow: hidden;
       font-family: 'VT323', monospace;
     }
 
-    /* full screen board (fills iframe) */
+    /* Fill the entire iframe/window */
     .board {
       width: 100%;
       height: 100%;
@@ -23,24 +34,25 @@
       grid-template-rows: repeat(6, 1fr);
       box-sizing: border-box;
       padding: 18px;
-      gap: 0;
-      /* subtle LED dots */
-      background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 1.6px);
+
+      /* LED dot pattern */
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 1.6px);
       background-size: 6px 6px;
-      background-color: #000;
+      background-color: var(--bg);
     }
 
     .row {
       display: grid;
-      grid-template-columns: 1.1fr 1.2fr 1fr;
+      grid-template-columns: 1.1fr 1.2fr 1fr; /* symbol | price | pct */
       align-items: center;
       padding: 6px 12px;
-      border-top: 2px solid rgba(255,255,255,0.12);
+      border-top: 2px solid var(--line);
     }
     .row:first-child { border-top: none; }
 
     .sym {
-      color: #f2f2f2;
+      color: var(--w);
       font-size: 56px;
       letter-spacing: 1px;
     }
@@ -53,8 +65,8 @@
 
     .pct { text-align: right; }
 
-    .up   { color: #39ff5a; text-shadow: 0 0 10px rgba(57,255,90,.25); }
-    .down { color: #ff2d2d; text-shadow: 0 0 10px rgba(255,45,45,.25); }
+    .up   { color: var(--g); text-shadow: 0 0 10px rgba(57,255,90,.25); }
+    .down { color: var(--r); text-shadow: 0 0 10px rgba(255,45,45,.25); }
 
     @media (max-width: 420px), (max-height: 420px) {
       .sym { font-size: 44px; }
@@ -65,36 +77,95 @@
 
 <body>
   <div class="board">
-    <div class="row">
+    <div class="row" data-symbol="GME">
       <div class="sym">$GME</div>
-      <div class="price up">177.98</div>
-      <div class="pct up">+1.32%</div>
+      <div class="price up" id="price-GME">--</div>
+      <div class="pct up" id="pct-GME">--</div>
     </div>
-    <div class="row">
+
+    <div class="row" data-symbol="BTC">
       <div class="sym">$BTC</div>
-      <div class="price down">64836</div>
-      <div class="pct down">-0.46%</div>
+      <div class="price up" id="price-BTC">--</div>
+      <div class="pct up" id="pct-BTC">--</div>
     </div>
-    <div class="row">
+
+    <div class="row" data-symbol="SLV">
       <div class="sym">$SLV</div>
-      <div class="price up">29.44</div>
-      <div class="pct up">+0.27%</div>
+      <div class="price up" id="price-SLV">--</div>
+      <div class="pct up" id="pct-SLV">--</div>
     </div>
-    <div class="row">
+
+    <div class="row" data-symbol="IAU">
       <div class="sym">$IAU</div>
-      <div class="price up">62.62</div>
-      <div class="pct up">+0.18%</div>
+      <div class="price up" id="price-IAU">--</div>
+      <div class="pct up" id="pct-IAU">--</div>
     </div>
-    <div class="row">
+
+    <div class="row" data-symbol="SCHD">
       <div class="sym">$SCHD</div>
-      <div class="price down">80.93</div>
-      <div class="pct down">-0.23%</div>
+      <div class="price up" id="price-SCHD">--</div>
+      <div class="pct up" id="pct-SCHD">--</div>
     </div>
-    <div class="row">
+
+    <div class="row" data-symbol="AMC">
       <div class="sym">$AMC</div>
-      <div class="price up">4.31</div>
-      <div class="pct up">+2.51%</div>
+      <div class="price up" id="price-AMC">--</div>
+      <div class="pct up" id="pct-AMC">--</div>
     </div>
   </div>
+
+  <script>
+    const symbols = ["GME","BTC","SLV","IAU","SCHD","AMC"];
+
+    // ✅ CHANGE THIS LINE ONLY:
+    const QUOTE_URL = "https://YOUR-WORKER-NAME.workers.dev/quotes";
+
+    function fmtPrice(sym, v) {
+      if (!Number.isFinite(v)) return "--";
+      if (sym === "BTC") return Math.round(v).toString();
+      return Number(v).toFixed(2);
+    }
+
+    function fmtPct(v) {
+      if (!Number.isFinite(v)) return "--";
+      return (v >= 0 ? "+" : "") + Number(v).toFixed(2) + "%";
+    }
+
+    function setCell(sym, price, pct) {
+      const priceEl = document.getElementById(`price-${sym}`);
+      const pctEl = document.getElementById(`pct-${sym}`);
+      if (!priceEl || !pctEl) return;
+
+      const up = Number.isFinite(pct) ? pct >= 0 : true;
+
+      priceEl.textContent = fmtPrice(sym, price);
+      pctEl.textContent = fmtPct(pct);
+
+      priceEl.className = "price " + (up ? "up" : "down");
+      pctEl.className = "pct " + (up ? "up" : "down");
+    }
+
+    async function update() {
+      try {
+        const res = await fetch(QUOTE_URL, { cache: "no-store" });
+        const data = await res.json();
+
+        for (const sym of symbols) {
+          const q = data[sym];
+          if (!q) continue;
+
+          const price = Number(q.price);
+          const pct = Number(q.pct);
+
+          setCell(sym, price, pct);
+        }
+      } catch (e) {
+        console.log("Update failed:", e);
+      }
+    }
+
+    update();
+    setInterval(update, 60000); // update every 60 seconds
+  </script>
 </body>
 </html>
