@@ -121,7 +121,9 @@
     const symbols = ["SCHD","IAU","SLV","BTC","GME","AMC","USAR","QQQ","CRWV"];
 
     // Your Cloudflare Worker endpoint (safe)
-    const QUOTE_URL = "https://pixel-ticker-api.ryan-j-cahoon.workers.dev/quotes";
+    const const ENDPOINT = "https://pixel-ticker-api.ryan-j-cahoon.workers.dev/";
+const QUOTE_URL = ENDPOINT;
+
 
     // Format helpers
     function fmtPrice(sym, v){
@@ -185,6 +187,7 @@
   </script>
 </body>
 </html>
+
 
 
 
