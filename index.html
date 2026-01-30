@@ -162,6 +162,8 @@
       pctEl.className = "pct " + (up ? "up" : "down");
     }
 
+    const ENDPOINT = "https://YOUR-WORKER-URL.workers.dev/";
+
     async function update(){
       try{
         const res = await fetch(QUOTE_URL, { cache: "no-store" });
@@ -183,4 +185,5 @@
   </script>
 </body>
 </html>
+
 
